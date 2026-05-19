@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyBuddy Finder</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <div class="login-hero">
+                    <div class="logo">
+                        <span class="logo-icon">&#x1F393;</span>
+                        <h1>StudyBuddy</h1>
+                    </div>
+                    <p class="tagline">Finde deinen perfekten Lernpartner</p>
+                </div>
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Schul-E-Mail</label>
+                        <input type="email" id="login-email" placeholder="vorname.name@bzz.ch" required>
+                        <span class="input-hint">Nur @bzz.ch Adressen erlaubt</span>
+                        <span id="login-error" class="error-msg hidden"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Passwort</label>
+                        <input type="password" id="login-password" placeholder="Mindestens 6 Zeichen" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">Anmelden</button>
+                    <p class="login-switch">Noch kein Konto? <a href="#" id="show-register">Registrieren</a></p>
+                </form>
+
+                <form id="register-form" class="login-form hidden">
+                    <div class="form-group">
+                        <label for="reg-email">Schul-E-Mail</label>
+                        <input type="email" id="reg-email" placeholder="vorname.name@bzz.ch" required>
+                        <span class="input-hint">Nur @bzz.ch Adressen erlaubt</span>
+                        <span id="reg-error" class="error-msg hidden"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-password">Passwort</label>
+                        <input type="password" id="reg-password" placeholder="Mindestens 6 Zeichen" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-password-confirm">Passwort bestätigen</label>
+                        <input type="password" id="reg-password-confirm" placeholder="Passwort wiederholen" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">Konto erstellen</button>
+                    <p class="login-switch">Bereits registriert? <a href="#" id="show-login">Anmelden</a></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Profile Setup Screen -->
+        <div id="profile-screen" class="screen">
+            <header class="app-header">
+                <div class="header-left">
+                    <span class="logo-small">&#x1F393; StudyBuddy</span>
+                </div>
+                <div class="header-right">
+                    <span id="user-email-display" class="user-email"></span>
+                    <button id="logout-btn" class="btn btn-ghost btn-sm">Abmelden</button>
+                </div>
+            </header>
+
+            <div class="profile-setup">
+                <div class="setup-progress">
+                    <div class="progress-step active" data-step="1">
+                        <div class="step-circle">1</div>
+                        <span>Persönliches</span>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step" data-step="2">
+                        <div class="step-circle">2</div>
+                        <span>Fächer</span>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step" data-step="3">
+                        <div class="step-circle">3</div>
+                        <span>Lernziele</span>
+                    </div>
+                </div>
+
+                <!-- Step 1: Personal Info -->
+                <div id="step-1" class="setup-step active">
+                    <div class="step-card">
+                        <h2>Persönliche Angaben</h2>
+                        <p class="step-desc">Erzähl uns etwas über dich, damit wir passende Lernbuddys finden können.</p>
+                        <div class="form-group">
+                            <label for="profile-name">Vollständiger Name *</label>
+                            <input type="text" id="profile-name" placeholder="z.B. Max Muster" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="profile-class">Klasse *</label>
+                                <input type="text" id="profile-class" placeholder="z.B. INF22a" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="profile-semester">Semester</label>
+                                <select id="profile-semester">
+                                    <option value="">Auswählen...</option>
+                                    <option value="1">1. Semester</option>
+                                    <option value="2">2. Semester</option>
+                                    <option value="3">3. Semester</option>
+                                    <option value="4">4. Semester</option>
+                                    <option value="5">5. Semester</option>
+                                    <option value="6">6. Semester</option>
+                                    <option value="7">7. Semester</option>
+                                    <option value="8">8. Semester</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Bevorzugte Lernzeiten</label>
+                            <div class="chip-group" id="time-chips">
+                                <button type="button" class="chip" data-value="morgens">Morgens (8-12)</button>
+                                <button type="button" class="chip" data-value="mittags">Mittags (12-14)</button>
+                                <button type="button" class="chip" data-value="nachmittags">Nachmittags (14-18)</button>
+                                <button type="button" class="chip" data-value="abends">Abends (18-21)</button>
+                                <button type="button" class="chip" data-value="wochenende">Wochenende</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Lernpräferenz</label>
+                            <div class="chip-group" id="pref-chips">
+                                <button type="button" class="chip" data-value="einzeln">Einzeln</button>
+                                <button type="button" class="chip" data-value="kleingruppe">Kleingruppe (2-3)</button>
+                                <button type="button" class="chip" data-value="gruppe">Gruppe (4+)</button>
+                                <button type="button" class="chip" data-value="online">Online</button>
+                                <button type="button" class="chip" data-value="vor-ort">Vor Ort</button>
+                            </div>
+                        </div>
+                        <div class="step-actions">
+                            <button type="button" class="btn btn-primary" id="to-step-2">Weiter</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Subjects -->
+                <div id="step-2" class="setup-step">
+                    <div class="step-card">
+                        <h2>Fächer & Interessen</h2>
+                        <p class="step-desc">Wähle deine Fächer aus oder füge eigene hinzu.</p>
+                        <div class="form-group">
+                            <label>Fächer auswählen *</label>
+                            <div class="chip-group selectable" id="subject-chips">
+                                <button type="button" class="chip" data-value="mathematik">Mathematik</button>
+                                <button type="button" class="chip" data-value="physik">Physik</button>
+                                <button type="button" class="chip" data-value="informatik">Informatik</button>
+                                <button type="button" class="chip" data-value="programmieren">Programmieren</button>
+                                <button type="button" class="chip" data-value="datenbanken">Datenbanken</button>
+                                <button type="button" class="chip" data-value="netzwerktechnik">Netzwerktechnik</button>
+                                <button type="button" class="chip" data-value="webentwicklung">Webentwicklung</button>
+                                <button type="button" class="chip" data-value="deutsch">Deutsch</button>
+                                <button type="button" class="chip" data-value="englisch">Englisch</button>
+                                <button type="button" class="chip" data-value="franzoesisch">Französisch</button>
+                                <button type="button" class="chip" data-value="wirtschaft">Wirtschaft</button>
+                                <button type="button" class="chip" data-value="recht">Recht</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="custom-subject">Eigenes Fach hinzufügen</label>
+                            <div class="input-with-btn">
+                                <input type="text" id="custom-subject" placeholder="z.B. Machine Learning">
+                                <button type="button" class="btn btn-outline btn-sm" id="add-subject-btn">Hinzufügen</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-interests">Interessen (Freitext)</label>
+                            <textarea id="profile-interests" rows="3" placeholder="z.B. KI, Open Source, Game Development, UI/UX Design..."></textarea>
+                        </div>
+                        <div class="step-actions">
+                            <button type="button" class="btn btn-ghost" id="back-to-1">Zurück</button>
+                            <button type="button" class="btn btn-primary" id="to-step-3">Weiter</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Learning Goals -->
+                <div id="step-3" class="setup-step">
+                    <div class="step-card">
+                        <h2>Lernziele</h2>
+                        <p class="step-desc">Was möchtest du erreichen? Das hilft uns, die besten Lernbuddys zu finden.</p>
+                        <div class="form-group">
+                            <label for="profile-goals">Meine Lernziele *</label>
+                            <textarea id="profile-goals" rows="4" placeholder="z.B. Prüfungsvorbereitung Modul 426, Java-Grundlagen vertiefen, Gemeinsam Projekte umsetzen..." required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Ich suche jemanden, der...</label>
+                            <div class="chip-group" id="seeking-chips">
+                                <button type="button" class="chip" data-value="erklaert">Gut erklären kann</button>
+                                <button type="button" class="chip" data-value="motiviert">Mich motiviert</button>
+                                <button type="button" class="chip" data-value="gleich">Auf gleichem Level ist</button>
+                                <button type="button" class="chip" data-value="fortgeschritten">Fortgeschrittener ist</button>
+                                <button type="button" class="chip" data-value="projekte">Projekte machen will</button>
+                                <button type="button" class="chip" data-value="pruefung">Prüfungen vorbereitet</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-bio">Kurze Bio (optional)</label>
+                            <textarea id="profile-bio" rows="2" placeholder="Ein kurzer Satz über dich..."></textarea>
+                        </div>
+                        <div class="step-actions">
+                            <button type="button" class="btn btn-ghost" id="back-to-2">Zurück</button>
+                            <button type="button" class="btn btn-primary" id="save-profile">Profil speichern</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Screen -->
+        <div id="dashboard-screen" class="screen">
+            <header class="app-header">
+                <div class="header-left">
+                    <span class="logo-small">&#x1F393; StudyBuddy</span>
+                </div>
+                <nav class="header-nav">
+                    <a href="#" class="nav-link active" data-tab="dashboard">Dashboard</a>
+                    <a href="#" class="nav-link" data-tab="my-profile">Mein Profil</a>
+                </nav>
+                <div class="header-right">
+                    <span id="dash-user-email" class="user-email"></span>
+                    <button id="dash-logout-btn" class="btn btn-ghost btn-sm">Abmelden</button>
+                </div>
+            </header>
+
+            <main class="dashboard-content">
+                <!-- Dashboard Tab -->
+                <div id="tab-dashboard" class="tab-content active">
+                    <div class="welcome-card">
+                        <h2>Willkommen zurück! &#x1F44B;</h2>
+                        <p>Dein Profil ist aktiv. Weitere Features wie Matching, Sessions und Chat kommen bald.</p>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">&#x1F4DA;</div>
+                            <div class="stat-value" id="stat-subjects">0</div>
+                            <div class="stat-label">Fächer</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">&#x1F3AF;</div>
+                            <div class="stat-value" id="stat-goals">-</div>
+                            <div class="stat-label">Lernziele</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">&#x1F91D;</div>
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Matches</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">&#x1F4C5;</div>
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Sessions</div>
+                        </div>
+                    </div>
+                    <div class="coming-soon-section">
+                        <h3>Bald verfügbar</h3>
+                        <div class="feature-cards">
+                            <div class="feature-card">
+                                <span class="feature-icon">&#x1F525;</span>
+                                <h4>Lernbuddy Matching</h4>
+                                <p>Swipe durch passende Lernpartner</p>
+                            </div>
+                            <div class="feature-card">
+                                <span class="feature-icon">&#x1F4C5;</span>
+                                <h4>Lernsessions</h4>
+                                <p>Erstelle und finde Sessions</p>
+                            </div>
+                            <div class="feature-card">
+                                <span class="feature-icon">&#x1F4AC;</span>
+                                <h4>Chat</h4>
+                                <p>Chatte mit deinen Matches</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- My Profile Tab -->
+                <div id="tab-my-profile" class="tab-content">
+                    <div class="profile-view">
+                        <div class="profile-header-card">
+                            <div class="profile-avatar" id="profile-avatar">MM</div>
+                            <div class="profile-info">
+                                <h2 id="view-name">-</h2>
+                                <p class="profile-meta"><span id="view-class">-</span> &middot; <span id="view-semester">-</span></p>
+                                <p class="profile-bio-text" id="view-bio"></p>
+                            </div>
+                            <button class="btn btn-outline btn-sm" id="edit-profile-btn">Bearbeiten</button>
+                        </div>
+                        <div class="profile-sections">
+                            <div class="profile-section">
+                                <h3>&#x1F4DA; Fächer</h3>
+                                <div class="chip-display" id="view-subjects"></div>
+                            </div>
+                            <div class="profile-section">
+                                <h3>&#x2B50; Interessen</h3>
+                                <p id="view-interests">-</p>
+                            </div>
+                            <div class="profile-section">
+                                <h3>&#x1F3AF; Lernziele</h3>
+                                <p id="view-goals">-</p>
+                            </div>
+                            <div class="profile-section">
+                                <h3>&#x1F50D; Ich suche...</h3>
+                                <div class="chip-display" id="view-seeking"></div>
+                            </div>
+                            <div class="profile-section">
+                                <h3>&#x23F0; Lernzeiten</h3>
+                                <div class="chip-display" id="view-times"></div>
+                            </div>
+                            <div class="profile-section">
+                                <h3>&#x1F465; Lernpräferenz</h3>
+                                <div class="chip-display" id="view-prefs"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Toast notifications -->
+        <div id="toast-container"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
