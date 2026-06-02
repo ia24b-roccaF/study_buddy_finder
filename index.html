@@ -223,6 +223,8 @@
                 </div>
                 <nav class="header-nav">
                     <a href="#" class="nav-link active" data-tab="dashboard">Dashboard</a>
+                    <a href="#" class="nav-link" data-tab="discover">Entdecken</a>
+                    <a href="#" class="nav-link" data-tab="sessions">Sessions</a>
                     <a href="#" class="nav-link" data-tab="my-profile">Mein Profil</a>
                 </nav>
                 <div class="header-right">
@@ -236,7 +238,7 @@
                 <div id="tab-dashboard" class="tab-content active">
                     <div class="welcome-card">
                         <h2>Willkommen zurück! &#x1F44B;</h2>
-                        <p>Dein Profil ist aktiv. Weitere Features wie Matching, Sessions und Chat kommen bald.</p>
+                        <p>Dein Profil ist aktiv. Entdecke Lernbuddys oder erstelle eine Lernsession.</p>
                     </div>
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -251,12 +253,12 @@
                         </div>
                         <div class="stat-card">
                             <div class="stat-icon">&#x1F91D;</div>
-                            <div class="stat-value">0</div>
+                            <div class="stat-value" id="stat-matches">0</div>
                             <div class="stat-label">Matches</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-icon">&#x1F4C5;</div>
-                            <div class="stat-value">0</div>
+                            <div class="stat-value" id="stat-sessions">0</div>
                             <div class="stat-label">Sessions</div>
                         </div>
                     </div>
@@ -264,21 +266,113 @@
                         <h3>Bald verfügbar</h3>
                         <div class="feature-cards">
                             <div class="feature-card">
-                                <span class="feature-icon">&#x1F525;</span>
-                                <h4>Lernbuddy Matching</h4>
-                                <p>Swipe durch passende Lernpartner</p>
-                            </div>
-                            <div class="feature-card">
-                                <span class="feature-icon">&#x1F4C5;</span>
-                                <h4>Lernsessions</h4>
-                                <p>Erstelle und finde Sessions</p>
-                            </div>
-                            <div class="feature-card">
                                 <span class="feature-icon">&#x1F4AC;</span>
                                 <h4>Chat</h4>
                                 <p>Chatte mit deinen Matches</p>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Discover / Swipe Tab -->
+                <div id="tab-discover" class="tab-content">
+                    <div class="discover-header">
+                        <h2>&#x1F525; Lernbuddys entdecken</h2>
+                        <p>Swipe rechts wenn du Interesse hast, links zum Ablehnen.</p>
+                    </div>
+
+                    <!-- Filter Bar -->
+                    <div class="filter-bar" id="discover-filters">
+                        <div class="filter-group">
+                            <label for="filter-subject">Fach:</label>
+                            <select id="filter-subject">
+                                <option value="">Alle Fächer</option>
+                                <option value="mathematik">Mathematik</option>
+                                <option value="physik">Physik</option>
+                                <option value="informatik">Informatik</option>
+                                <option value="programmieren">Programmieren</option>
+                                <option value="datenbanken">Datenbanken</option>
+                                <option value="netzwerktechnik">Netzwerktechnik</option>
+                                <option value="webentwicklung">Webentwicklung</option>
+                                <option value="deutsch">Deutsch</option>
+                                <option value="englisch">Englisch</option>
+                                <option value="wirtschaft">Wirtschaft</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-time">Lernzeit:</label>
+                            <select id="filter-time">
+                                <option value="">Alle Zeiten</option>
+                                <option value="morgens">Morgens (8-12)</option>
+                                <option value="mittags">Mittags (12-14)</option>
+                                <option value="nachmittags">Nachmittags (14-18)</option>
+                                <option value="abends">Abends (18-21)</option>
+                                <option value="wochenende">Wochenende</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-ghost btn-sm" id="reset-discover-filters">Filter zurücksetzen</button>
+                    </div>
+
+                    <div class="swipe-area">
+                        <div class="swipe-stack" id="swipe-stack">
+                            <!-- Cards rendered by JS -->
+                        </div>
+                        <div class="swipe-empty hidden" id="swipe-empty">
+                            <span class="empty-icon">&#x1F50D;</span>
+                            <h3>Keine weiteren Profile</h3>
+                            <p>Du hast alle verfügbaren Lernbuddys gesehen. Schau später wieder vorbei!</p>
+                        </div>
+                        <div class="swipe-no-results hidden" id="swipe-no-results">
+                            <span class="empty-icon">&#x1F6AB;</span>
+                            <h3>Keine Treffer</h3>
+                            <p>Kein Profil passt zu deinen Filtern. Versuche andere Filter.</p>
+                        </div>
+                        <div class="swipe-controls">
+                            <button class="swipe-btn swipe-btn-reject" id="btn-reject" title="Ablehnen">&#x2716;</button>
+                            <button class="swipe-btn swipe-btn-accept" id="btn-accept" title="Interesse">&#x2764;</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sessions Tab -->
+                <div id="tab-sessions" class="tab-content">
+                    <div class="sessions-header">
+                        <h2>&#x1F4C5; Lernsessions</h2>
+                        <button class="btn btn-primary" id="create-session-btn">+ Neue Session</button>
+                    </div>
+
+                    <!-- Session Filter Bar -->
+                    <div class="filter-bar" id="session-filters">
+                        <div class="filter-group">
+                            <label for="session-filter-subject">Fach:</label>
+                            <select id="session-filter-subject">
+                                <option value="">Alle Fächer</option>
+                                <option value="mathematik">Mathematik</option>
+                                <option value="physik">Physik</option>
+                                <option value="informatik">Informatik</option>
+                                <option value="programmieren">Programmieren</option>
+                                <option value="datenbanken">Datenbanken</option>
+                                <option value="netzwerktechnik">Netzwerktechnik</option>
+                                <option value="webentwicklung">Webentwicklung</option>
+                                <option value="deutsch">Deutsch</option>
+                                <option value="englisch">Englisch</option>
+                                <option value="wirtschaft">Wirtschaft</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="session-filter-date">Datum:</label>
+                            <input type="date" id="session-filter-date">
+                        </div>
+                        <button class="btn btn-ghost btn-sm" id="reset-session-filters">Filter zurücksetzen</button>
+                    </div>
+
+                    <div class="sessions-list" id="sessions-list">
+                        <!-- Rendered by JS -->
+                    </div>
+                    <div class="sessions-empty hidden" id="sessions-empty">
+                        <span class="empty-icon">&#x1F4AD;</span>
+                        <h3>Keine Sessions gefunden</h3>
+                        <p>Erstelle die erste Lernsession oder passe deine Filter an.</p>
                     </div>
                 </div>
 
@@ -323,6 +417,90 @@
                     </div>
                 </div>
             </main>
+        </div>
+
+        <!-- Match Modal -->
+        <div class="modal-overlay hidden" id="match-modal">
+            <div class="modal match-modal">
+                <div class="match-celebration">&#x1F389;</div>
+                <h2>It's a Match!</h2>
+                <p id="match-text">Du und <strong></strong> habt gegenseitiges Interesse!</p>
+                <button class="btn btn-primary btn-full" id="match-close">Weiter swipen</button>
+            </div>
+        </div>
+
+        <!-- Session Create Modal -->
+        <div class="modal-overlay hidden" id="session-modal">
+            <div class="modal session-form-modal">
+                <div class="modal-header">
+                    <h2 id="session-modal-title">Neue Lernsession</h2>
+                    <button class="modal-close" id="session-modal-close">&times;</button>
+                </div>
+                <form id="session-form">
+                    <div class="form-group">
+                        <label for="session-subject">Fach *</label>
+                        <select id="session-subject" required>
+                            <option value="">Fach auswählen...</option>
+                            <option value="mathematik">Mathematik</option>
+                            <option value="physik">Physik</option>
+                            <option value="informatik">Informatik</option>
+                            <option value="programmieren">Programmieren</option>
+                            <option value="datenbanken">Datenbanken</option>
+                            <option value="netzwerktechnik">Netzwerktechnik</option>
+                            <option value="webentwicklung">Webentwicklung</option>
+                            <option value="deutsch">Deutsch</option>
+                            <option value="englisch">Englisch</option>
+                            <option value="wirtschaft">Wirtschaft</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="session-topic">Thema</label>
+                        <input type="text" id="session-topic" placeholder="z.B. Prüfungsvorbereitung Kapitel 5">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="session-date">Datum *</label>
+                            <input type="date" id="session-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="session-time">Uhrzeit *</label>
+                            <input type="time" id="session-time" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="session-desc">Beschreibung (optional)</label>
+                        <textarea id="session-desc" rows="3" placeholder="Was wird gemacht? Wo trefft ihr euch?"></textarea>
+                    </div>
+                    <input type="hidden" id="session-edit-id" value="">
+                    <div class="step-actions">
+                        <button type="button" class="btn btn-ghost" id="session-cancel">Abbrechen</button>
+                        <button type="submit" class="btn btn-primary" id="session-submit-btn">Session erstellen</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Session Detail Modal -->
+        <div class="modal-overlay hidden" id="session-detail-modal">
+            <div class="modal session-detail">
+                <div class="modal-header">
+                    <h2 id="detail-subject">-</h2>
+                    <button class="modal-close" id="detail-close">&times;</button>
+                </div>
+                <div class="detail-body">
+                    <div class="detail-row"><span class="detail-label">Thema</span><span id="detail-topic">-</span></div>
+                    <div class="detail-row"><span class="detail-label">Datum</span><span id="detail-date">-</span></div>
+                    <div class="detail-row"><span class="detail-label">Uhrzeit</span><span id="detail-time">-</span></div>
+                    <div class="detail-row"><span class="detail-label">Ersteller:in</span><span id="detail-creator">-</span></div>
+                    <div class="detail-desc-block">
+                        <span class="detail-label">Beschreibung</span>
+                        <p id="detail-desc">-</p>
+                    </div>
+                </div>
+                <div class="detail-actions" id="detail-actions">
+                    <!-- Edit/Delete buttons if owner -->
+                </div>
+            </div>
         </div>
 
         <!-- Toast notifications -->
