@@ -426,7 +426,8 @@ function showDashboard(email, profile) {
 
     // Stats
     document.getElementById('stat-subjects').textContent = profile.subjects.length;
-    document.getElementById('stat-goals').textContent = profile.goals ? 'Gesetzt' : '-';
+    const goalCount = profile.goals ? profile.goals.split(',').map(g => g.trim()).filter(Boolean).length : 0;
+    document.getElementById('stat-goals').textContent = goalCount || '-';
     document.getElementById('stat-matches').textContent = Storage.getMatches().length;
 
     const sessions = Storage.getSessions();
