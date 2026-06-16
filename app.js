@@ -210,7 +210,6 @@ function initDemoData() {
     for (const demo of DEMO_PROFILES) {
         if (!swiped[demo.email]) {
             swiped[demo.email] = {};
-            // Each demo user "likes" a random set of other users
             for (const other of DEMO_PROFILES) {
                 if (other.email !== demo.email && Math.random() > 0.4) {
                     swiped[demo.email][other.email] = 'right';
@@ -220,6 +219,20 @@ function initDemoData() {
     }
     localStorage.setItem('sb_swiped', JSON.stringify(swiped));
     if (changed) Storage.saveUsers(users);
+
+    // Keep demo session dates fresh — update to future dates on each load
+    const demoIds = new Set(DEMO_SESSIONS.map(s => s.id));
+    const sessions = JSON.parse(localStorage.getItem('sb_sessions') || '[]');
+    const today = new Date().toISOString().split('T')[0];
+    const hasStaleDemoSessions = sessions.some(s => demoIds.has(s.id) && s.date < today);
+
+    if (sessions.length === 0) {
+        localStorage.setItem('sb_sessions', JSON.stringify([...DEMO_SESSIONS]));
+    } else if (hasStaleDemoSessions) {
+        const demoDateMap = Object.fromEntries(DEMO_SESSIONS.map(s => [s.id, s.date]));
+        const refreshed = sessions.map(s => demoIds.has(s.id) ? { ...s, date: demoDateMap[s.id] } : s);
+        localStorage.setItem('sb_sessions', JSON.stringify(refreshed));
+    }
 }
 initDemoData();
 
