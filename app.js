@@ -672,7 +672,7 @@ function handleSwipe(profile, direction) {
         const swiped = JSON.parse(localStorage.getItem('sb_swiped') || '{}');
         const currentUser = Storage.getCurrentUser();
         if (swiped[profile.email]?.[currentUser] === 'right') {
-            showMatchModal(profile.name);
+            showMatchModal(profile.name, profile.email);
         }
     }
 
@@ -711,7 +711,8 @@ document.getElementById('btn-accept').addEventListener('click', () => {
 });
 
 // Match Modal
-function showMatchModal(name) {
+function showMatchModal(name, email) {
+    lastMatchEmail = email || null;
     const modal = document.getElementById('match-modal');
     modal.querySelector('#match-text strong').textContent = name;
     modal.classList.remove('hidden');
@@ -928,3 +929,332 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     }
     showScreen('login-screen');
 })();
+
+// ============================================================
+// CHAT — US8 (Chat), US9 (Textvorschläge), US10 (Sprachnachricht)
+// Chatpartner = gegenseitige Matches (Storage.getMatches()).
+// Speicherung in localStorage (sb_chats), passend zur Storage-Schicht.
+// ============================================================
+
+// ----- Chat-Datenspeicher -----
+const ChatStore = {
+    convId(a, b) { return [a, b].sort().join('|'); },
+    getAll() { return JSON.parse(localStorage.getItem('sb_chats') || '{}'); },
+    saveAll(chats) {
+        try { localStorage.setItem('sb_chats', JSON.stringify(chats)); }
+        catch (e) { showToast('Speicher voll – Sprachnachricht evtl. zu lang.', 'error'); }
+    },
+    get(otherEmail) {
+        const id = this.convId(Storage.getCurrentUser(), otherEmail);
+        return this.getAll()[id] || { participants: [Storage.getCurrentUser(), otherEmail], messages: [] };
+    },
+    addMessage(otherEmail, msg) {
+        const me = Storage.getCurrentUser();
+        const all = this.getAll();
+        const id = this.convId(me, otherEmail);
+        if (!all[id]) all[id] = { participants: [me, otherEmail], messages: [] };
+        all[id].messages.push(msg);
+        this.saveAll(all);
+    },
+    lastMessage(otherEmail) {
+        const msgs = this.get(otherEmail).messages;
+        return msgs[msgs.length - 1] || null;
+    }
+};
+
+// ----- Helfer -----
+let activeChatEmail = null;
+let lastMatchEmail = null;
+
+function initialsOf(name) { return (name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2); }
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function formatTime(ts) { return new Date(ts).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }); }
+function formatDuration(sec) { return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
+function formatDay(ts) {
+    const startOf = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diff = (startOf(new Date()) - startOf(new Date(ts))) / 86400000;
+    if (diff === 0) return 'Heute';
+    if (diff === 1) return 'Gestern';
+    return new Date(ts).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+function getSharedSubject(profile) {
+    const me = Storage.getUserProfile(Storage.getCurrentUser());
+    if (!me || !profile) return null;
+    const mine = new Set(me.subjects || []);
+    return (profile.subjects || []).find(s => mine.has(s)) || null;
+}
+
+// ----- Ansicht wechseln -----
+function showChatListView() {
+    document.getElementById('chat-list-view').classList.remove('hidden');
+    document.getElementById('chat-conversation-view').classList.add('hidden');
+}
+function showChatConversationView() {
+    document.getElementById('chat-list-view').classList.add('hidden');
+    document.getElementById('chat-conversation-view').classList.remove('hidden');
+}
+
+// ----- US8: Konversationsliste -----
+function renderChatList() {
+    showChatListView();
+    const matches = Storage.getMatches();
+    const users = Storage.getUsers();
+    const container = document.getElementById('chat-conversations');
+    const empty = document.getElementById('chat-empty');
+    container.innerHTML = '';
+
+    if (matches.length === 0) { empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+
+    matches
+        .map(email => ({ email, profile: users[email]?.profile, last: ChatStore.lastMessage(email) }))
+        .sort((a, b) => (b.last?.ts || 0) - (a.last?.ts || 0))
+        .forEach(({ email, profile, last }) => {
+            const name = profile?.name || email;
+            const preview = last
+                ? (last.type === 'voice' ? '🎤 Sprachnachricht' : last.text)
+                : 'Sag Hallo 👋';
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'chat-conv-item';
+            item.innerHTML =
+                `<div class="conv-avatar">${initialsOf(name)}</div>` +
+                `<div class="conv-main">` +
+                    `<div class="conv-name">${escapeHtml(name)}</div>` +
+                    `<div class="conv-last">${escapeHtml(preview)}</div>` +
+                `</div>` +
+                (last ? `<div class="conv-time">${formatTime(last.ts)}</div>` : '');
+            item.addEventListener('click', () => openConversation(email));
+            container.appendChild(item);
+        });
+}
+
+// ----- US8: Konversation öffnen -----
+function openConversation(email) {
+    activeChatEmail = email;
+    const profile = Storage.getUserProfile(email);
+    const name = profile?.name || email;
+    document.getElementById('chat-conv-avatar').textContent = initialsOf(name);
+    document.getElementById('chat-conv-name').textContent = name;
+    document.getElementById('chat-conv-sub').textContent = profile
+        ? [profile.class, profile.semester ? profile.semester + '. Semester' : ''].filter(Boolean).join(' · ')
+        : '';
+
+    seedOpeningMessage(email, profile);
+    renderMessages(email);
+    renderSuggestions(email, profile);
+    document.getElementById('chat-input').value = '';
+    showChatConversationView();
+    setTimeout(() => document.getElementById('chat-input').focus(), 60);
+}
+
+// Erste Nachricht des Gegenübers, damit der Chat nicht leer startet (Demo)
+function seedOpeningMessage(email, profile) {
+    if (ChatStore.get(email).messages.length > 0) return;
+    const shared = getSharedSubject(profile);
+    const openers = [
+        'Hey! Cool, dass es gematcht hat 😊',
+        shared ? `Hi! Du lernst auch ${capitalize(shared)}? Wollen wir uns zusammentun?` : 'Hi! Schön, dich kennenzulernen.',
+        'Hallo! Suchst du gerade eine Lerngruppe?'
+    ];
+    ChatStore.addMessage(email, {
+        id: 'm_' + Date.now(), sender: email, type: 'text',
+        text: openers[Math.floor(Math.random() * openers.length)], ts: Date.now() - 60000
+    });
+}
+
+function renderMessages(email) {
+    const me = Storage.getCurrentUser();
+    const box = document.getElementById('chat-messages');
+    box.innerHTML = '';
+    let lastDay = '';
+    ChatStore.get(email).messages.forEach(msg => {
+        const day = formatDay(msg.ts);
+        if (day !== lastDay) {
+            lastDay = day;
+            const d = document.createElement('div');
+            d.className = 'chat-day'; d.textContent = day;
+            box.appendChild(d);
+        }
+        const el = document.createElement('div');
+        el.className = 'msg ' + (msg.sender === me ? 'me' : 'them');
+        if (msg.type === 'voice') {
+            el.innerHTML = voiceBubbleHTML(msg);
+            box.appendChild(el);
+            wireVoicePlayback(el, msg);
+        } else {
+            el.innerHTML = `${escapeHtml(msg.text)}<span class="msg-time">${formatTime(msg.ts)}</span>`;
+            box.appendChild(el);
+        }
+    });
+    box.scrollTop = box.scrollHeight;
+}
+
+// ----- US9: Textvorschläge -----
+function renderSuggestions(email, profile) {
+    const box = document.getElementById('chat-suggestions');
+    box.innerHTML = '';
+    const shared = getSharedSubject(profile);
+    const suggestions = [
+        'Hey! 👋',
+        'Wann hast du Zeit zum Lernen?',
+        'Sollen wir uns in der BZZ treffen?',
+        'Lieber online oder vor Ort?'
+    ];
+    if (shared) suggestions.unshift(`Wollen wir zusammen ${capitalize(shared)} lernen?`);
+
+    suggestions.slice(0, 5).forEach(text => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'suggestion-chip';
+        chip.textContent = text;
+        chip.addEventListener('click', () => {
+            const input = document.getElementById('chat-input');
+            input.value = text;
+            input.focus();
+        });
+        box.appendChild(chip);
+    });
+}
+
+// ----- Text senden -----
+function sendChatText(text) {
+    text = (text || '').trim();
+    if (!text || !activeChatEmail) return;
+    ChatStore.addMessage(activeChatEmail, {
+        id: 'm_' + Date.now(), sender: Storage.getCurrentUser(), type: 'text', text, ts: Date.now()
+    });
+    document.getElementById('chat-input').value = '';
+    renderMessages(activeChatEmail);
+    scheduleAutoReply(activeChatEmail);
+}
+
+// Demo: Gegenüber antwortet automatisch (echtes 2-Wege-Chat bräuchte ein Backend)
+function scheduleAutoReply(email) {
+    const replies = [
+        'Klingt gut! 👍', 'Ja gerne, wann passt es dir?', 'Top, machen wir!',
+        'Cool, ich freu mich!', 'Sollen wir eine Lernsession erstellen?', 'Welches Thema möchtest du angehen?'
+    ];
+    setTimeout(() => {
+        ChatStore.addMessage(email, {
+            id: 'm_' + Date.now(), sender: email, type: 'text',
+            text: replies[Math.floor(Math.random() * replies.length)], ts: Date.now()
+        });
+        if (activeChatEmail === email) renderMessages(email);
+    }, 1200 + Math.random() * 800);
+}
+
+// ----- US10: Sprachnachricht (Aufnahme) -----
+function voiceBubbleHTML(msg) {
+    return `<div class="msg-voice">` +
+        `<button class="voice-play" type="button" aria-label="Abspielen">&#x25B6;</button>` +
+        `<div class="voice-wave">${waveBars(msg.id || 'v')}</div>` +
+        `<span class="voice-dur">${formatDuration(msg.duration || 0)}</span>` +
+        `</div><span class="msg-time">${formatTime(msg.ts)}</span>`;
+}
+function waveBars(seed) {
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+    let bars = '';
+    for (let i = 0; i < 20; i++) { h = (h * 1103515245 + 12345) >>> 0; bars += `<span style="height:${4 + (h % 16)}px"></span>`; }
+    return bars;
+}
+function wireVoicePlayback(el, msg) {
+    const btn = el.querySelector('.voice-play');
+    let audio = null;
+    btn.addEventListener('click', () => {
+        if (!audio) {
+            audio = new Audio(msg.audio);
+            audio.addEventListener('ended', () => { btn.innerHTML = '&#x25B6;'; });
+        }
+        if (audio.paused) { audio.play().catch(() => {}); btn.innerHTML = '&#x23F8;'; }
+        else { audio.pause(); btn.innerHTML = '&#x25B6;'; }
+    });
+}
+
+let mediaRecorder = null, recChunks = [], recStream = null, recStartTs = 0, recTimerInt = null;
+const REC_MAX_SEC = 60;
+
+function showRecordingUI(on) {
+    document.getElementById('chat-recording').classList.toggle('hidden', !on);
+    document.getElementById('chat-inputbar').classList.toggle('hidden', on);
+    document.getElementById('chat-suggestions').classList.toggle('hidden', on);
+}
+function updateRecTimer() {
+    const s = Math.floor((Date.now() - recStartTs) / 1000);
+    document.getElementById('rec-timer').textContent = formatDuration(s);
+    if (s >= REC_MAX_SEC) stopRecording(true);
+}
+async function startRecording() {
+    if (!activeChatEmail) return;
+    if (!navigator.mediaDevices || !window.MediaRecorder) {
+        showToast('Sprachaufnahme wird von diesem Browser nicht unterstützt.', 'error'); return;
+    }
+    try { recStream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+    catch (e) { showToast('Kein Mikrofonzugriff.', 'error'); return; }
+
+    recChunks = [];
+    mediaRecorder = new MediaRecorder(recStream);
+    mediaRecorder.addEventListener('dataavailable', e => { if (e.data.size > 0) recChunks.push(e.data); });
+    mediaRecorder.start();
+    recStartTs = Date.now();
+    showRecordingUI(true);
+    document.getElementById('rec-timer').textContent = '0:00';
+    recTimerInt = setInterval(updateRecTimer, 200);
+}
+function cleanupStream() {
+    if (recStream) { recStream.getTracks().forEach(t => t.stop()); recStream = null; }
+}
+function stopRecording(send) {
+    if (recTimerInt) { clearInterval(recTimerInt); recTimerInt = null; }
+    const duration = Math.round((Date.now() - recStartTs) / 1000);
+    showRecordingUI(false);
+    const targetEmail = activeChatEmail;
+
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.addEventListener('stop', () => {
+            cleanupStream();
+            if (!send) { recChunks = []; return; }
+            const blob = new Blob(recChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+            if (blob.size === 0 || duration < 1) { showToast('Aufnahme zu kurz.', 'info'); return; }
+            const reader = new FileReader();
+            reader.onload = () => {
+                ChatStore.addMessage(targetEmail, {
+                    id: 'm_' + Date.now(), sender: Storage.getCurrentUser(),
+                    type: 'voice', audio: reader.result, duration, ts: Date.now()
+                });
+                if (activeChatEmail === targetEmail) renderMessages(targetEmail);
+                scheduleAutoReply(targetEmail);
+            };
+            reader.readAsDataURL(blob);
+        }, { once: true });
+        mediaRecorder.stop();
+    } else {
+        cleanupStream();
+    }
+}
+
+// ----- Verdrahtung -----
+function activateTab(tab) {
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.tab === tab));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.toggle('active', t.id === `tab-${tab}`));
+    window.scrollTo(0, 0);
+    if (tab === 'chat') renderChatList();
+}
+
+document.querySelector('.nav-link[data-tab="chat"]').addEventListener('click', () => renderChatList());
+document.getElementById('open-chat-shortcut').addEventListener('click', () => activateTab('chat'));
+document.getElementById('chat-back-btn').addEventListener('click', renderChatList);
+document.getElementById('chat-send-btn').addEventListener('click', () => sendChatText(document.getElementById('chat-input').value));
+document.getElementById('chat-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); sendChatText(e.target.value); }
+});
+document.getElementById('chat-mic-btn').addEventListener('click', startRecording);
+document.getElementById('rec-cancel').addEventListener('click', () => stopRecording(false));
+document.getElementById('rec-send').addEventListener('click', () => stopRecording(true));
+document.getElementById('match-chat-btn').addEventListener('click', () => {
+    document.getElementById('match-modal').classList.add('hidden');
+    if (lastMatchEmail) { activateTab('chat'); openConversation(lastMatchEmail); }
+});

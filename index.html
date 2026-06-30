@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de-CH">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -225,6 +225,7 @@
                     <a href="#" class="nav-link active" data-tab="dashboard">Dashboard</a>
                     <a href="#" class="nav-link" data-tab="discover">Entdecken</a>
                     <a href="#" class="nav-link" data-tab="sessions">Sessions</a>
+                    <a href="#" class="nav-link" data-tab="chat">Chat</a>
                     <a href="#" class="nav-link" data-tab="my-profile">Mein Profil</a>
                 </nav>
                 <div class="header-right">
@@ -263,13 +264,13 @@
                         </div>
                     </div>
                     <div class="coming-soon-section">
-                        <h3>Bald verfügbar</h3>
+                        <h3>Schnellzugriff</h3>
                         <div class="feature-cards">
-                            <div class="feature-card">
+                            <button type="button" class="feature-card feature-card--action" id="open-chat-shortcut">
                                 <span class="feature-icon">&#x1F4AC;</span>
                                 <h4>Chat</h4>
                                 <p>Chatte mit deinen Matches</p>
-                            </div>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -376,6 +377,56 @@
                     </div>
                 </div>
 
+                <!-- Chat Tab (US8 Chat, US9 Textvorschläge, US10 Sprachnachricht) -->
+                <div id="tab-chat" class="tab-content">
+                    <!-- Konversationsliste -->
+                    <div id="chat-list-view">
+                        <div class="chat-list-header">
+                            <h2>&#x1F4AC; Chat</h2>
+                            <p>Schreibe mit deinen Matches &ndash; per Text oder Sprachnachricht.</p>
+                        </div>
+                        <div class="chat-conversations" id="chat-conversations"></div>
+                        <div class="chat-empty hidden" id="chat-empty">
+                            <span class="empty-icon">&#x1F4AC;</span>
+                            <h3>Noch keine Matches</h3>
+                            <p>Finde im Tab &bdquo;Entdecken&ldquo; zuerst Lernbuddys. Bei einem gegenseitigen Match kannst du hier chatten.</p>
+                        </div>
+                    </div>
+
+                    <!-- Einzelne Konversation -->
+                    <div id="chat-conversation-view" class="hidden">
+                        <div class="chat-conv-header">
+                            <button class="chat-back-btn" id="chat-back-btn" aria-label="Zurück zur Übersicht">&#x2190;</button>
+                            <div class="chat-conv-avatar" id="chat-conv-avatar">MM</div>
+                            <div class="chat-conv-meta">
+                                <div class="chat-conv-name" id="chat-conv-name">-</div>
+                                <div class="chat-conv-sub" id="chat-conv-sub">-</div>
+                            </div>
+                        </div>
+
+                        <div class="chat-messages" id="chat-messages"></div>
+
+                        <!-- US9: Textvorschläge -->
+                        <div class="chat-suggestions" id="chat-suggestions" aria-label="Textvorschläge"></div>
+
+                        <!-- Eingabeleiste -->
+                        <div class="chat-inputbar" id="chat-inputbar">
+                            <button class="chat-mic-btn" id="chat-mic-btn" aria-label="Sprachnachricht aufnehmen" title="Sprachnachricht aufnehmen">&#x1F3A4;</button>
+                            <input type="text" id="chat-input" class="chat-input" placeholder="Nachricht schreiben&hellip;" autocomplete="off">
+                            <button class="chat-send-btn" id="chat-send-btn" aria-label="Senden" title="Senden">&#x27A4;</button>
+                        </div>
+
+                        <!-- US10: Aufnahme-Leiste -->
+                        <div class="chat-recording hidden" id="chat-recording">
+                            <span class="rec-dot" aria-hidden="true"></span>
+                            <span class="rec-timer" id="rec-timer">0:00</span>
+                            <span class="rec-hint">Sprachnachricht aufnehmen&hellip;</span>
+                            <button type="button" class="btn btn-ghost btn-sm" id="rec-cancel">Abbrechen</button>
+                            <button type="button" class="btn btn-primary btn-sm" id="rec-send">Senden</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- My Profile Tab -->
                 <div id="tab-my-profile" class="tab-content">
                     <div class="profile-view">
@@ -425,7 +476,8 @@
                 <div class="match-celebration">&#x1F389;</div>
                 <h2>It's a Match!</h2>
                 <p id="match-text">Du und <strong></strong> habt gegenseitiges Interesse!</p>
-                <button class="btn btn-primary btn-full" id="match-close">Weiter swipen</button>
+                <button class="btn btn-primary btn-full" id="match-chat-btn">Nachricht senden</button>
+                <button class="btn btn-ghost btn-full" id="match-close">Weiter swipen</button>
             </div>
         </div>
 
